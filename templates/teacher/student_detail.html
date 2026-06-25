@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Student Report | AutoGrade{% endblock %}
+{% block content %}
+<a href="{{ url_for('exam_results', exam_id=sub.exam_id) }}" style="color:var(--muted);text-decoration:none;font-size:.88rem;display:inline-block;margin-bottom:1rem">&#8592; Exam Results</a>
+<div class="pt">&#127891; {{ sub.student.full_name() }}</div>
+<div class="ps">{{ sub.exam.title }} &middot; Submitted {{ sub.submitted_at.strftime('%d %b %Y, %H:%M') }}</div>
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-num" style="color:{% if sub.percentage>=70 %}#4ade80{% elif sub.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}">{{ sub.grade }}</div><div class="stat-lbl">Grade</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent)">{{ sub.total_score }}/{{ sub.total_marks }}</div><div class="stat-lbl">Score</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent2)">{{ sub.percentage }}%</div><div class="stat-lbl">Percentage</div></div>
+</div>
+{% for a in sub.answers %}
+<div class="card" style="margin-bottom:1.2rem">
+  <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.9rem;flex-wrap:wrap">
+    <span class="chip {% if a.percentage>=70 %}cg{% elif a.percentage>=40 %}cy{% else %}cr{% endif %}">Q{{ loop.index }}</span>
+    <span style="font-size:.75rem;color:var(--accent2)">{{ a.question.subject.name }}</span>
+    <span style="font-size:.88rem;font-weight:500;flex:1">{{ a.question.question_text }}</span>
+    <span style="font-family:'Syne',sans-serif;font-weight:800;color:{% if a.percentage>=70 %}#4ade80{% elif a.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}">{{ a.score }}/{{ a.question.max_marks }}</span>
+  </div>
+  {% for label, val in [('Semantic Similarity', a.semantic_similarity), ('Keyword Coverage', a.keyword_coverage), ('Length Adequacy', a.length_adequacy)] %}
+  <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.5rem">
+    <div style="font-size:.77rem;color:var(--muted);width:155px;flex-shrink:0">{{ label }}</div>
+    <div class="bar-t" style="flex:1"><div class="bar-f" style="width:{{ val }}%;background:{% if val>=70 %}#4ade80{% elif val>=40 %}#f59e0b{% else %}#f87171{% endif %}"></div></div>
+    <div style="font-size:.77rem;font-weight:600;width:38px;text-align:right">{{ val }}%</div>
+  </div>
+  {% endfor %}
+  <div style="margin-top:.9rem;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.14);border-radius:8px;padding:.8rem 1rem;font-size:.84rem;line-height:1.6">&#128161; {{ a.feedback }}</div>
+  <div style="margin-top:.8rem"><div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem">Student Answer</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;font-size:.875rem;line-height:1.65">{{ a.student_answer or '(No answer provided)' }}</div></div>
+</div>{% endfor %}
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Create Exam | AutoGrade{% endblock %}
+{% block page_class %}page-sm{% endblock %}
+{% block content %}
+<div class="pt">&#128203; Create New Exam</div>
+<div class="ps">Bundle questions into an exam for students</div>
+<div class="card">
+  <form method="post">
+    <div class="fg"><label>Exam Title</label><input type="text" name="title" class="fc" placeholder="e.g. Mid-term CS Exam" required></div>
+    <div class="fg">
+<label>Add New Subject (optional)</label>
+<input type="text" name="subject_name" class="fc" placeholder="Type new subject if not listed">
+</div>
+
+<div class="fg">
+<label>Select Existing Subject</label>
+<select name="subject_id" class="fc">
+  <option value="">-- Select Subject --</option>
+  {% for s in subjects %}
+  <option value="{{ s.id }}">{{ s.name }}</option>
+  {% endfor %}
+</select>
+</div>
+    <div class="fg"><label>Select Questions</label>
+      {% if questions %}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;max-height:320px;overflow-y:auto">
+        {% for q in questions %}
+        <label style="display:flex;align-items:flex-start;gap:.7rem;margin-bottom:.7rem;cursor:pointer;font-size:.88rem">
+          <input type="checkbox" name="questions" value="{{ q.id }}" style="margin-top:.2rem;accent-color:var(--accent)">
+          <span><span class="chip cc" style="font-size:.7rem">{{ q.subject.name }}</span> &nbsp;{{ q.question_text[:70] }}{% if q.question_text|length > 70 %}...{% endif %} <span style="color:var(--muted);font-size:.78rem">({{ q.max_marks }} marks)</span></span>
+        </label>
+        {% endfor %}
+      </div>
+      <small id="sc" style="color:var(--muted);font-size:.77rem;margin-top:.3rem;display:block">0 questions selected</small>
+      {% else %}<p style="color:var(--muted);font-size:.9rem">No questions yet. <a href="{{ url_for('add_question') }}" style="color:var(--accent)">Add questions first &#8594;</a></p>{% endif %}
+    </div>
+    <div class="fg"><label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;text-transform:none;letter-spacing:0">
+      <input type="checkbox" name="is_active" checked style="accent-color:var(--accent)">
+      <span style="font-size:.9rem">Make exam active (visible to students immediately)</span>
+    </label></div>
+    <div style="display:flex;gap:.8rem;margin-top:1rem">
+      <button type="submit" class="btn btn-accent btn-lg">Create Exam &#8594;</button>
+      <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline btn-lg">Cancel</a>
+    </div>
+  </form>
+</div>
+<script>document.querySelectorAll('input[name="questions"]').forEach(c=>c.addEventListener('change',()=>{const n=document.querySelectorAll('input[name="questions"]:checked').length;document.getElementById('sc').textContent=n+' question'+(n!==1?'s':'')+' selected';}))</script>
+{% endblock %}

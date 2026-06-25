@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>{% block title %}AutoGrade{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0a0e17;--surface:#111827;--card:#161d2e;--accent:#4ade80;--accent2:#22d3ee;--warn:#f59e0b;--danger:#f87171;--text:#e2e8f0;--muted:#64748b;--border:#1e293b}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(74,222,128,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+    nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:.85rem 2rem;background:rgba(10,14,23,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;text-decoration:none;color:var(--text)}
+    .logo span{color:var(--accent)}
+    .nav-r{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap}
+    .nav-u{font-size:.82rem;color:var(--muted)}
+    .badge-role{font-size:.7rem;font-weight:700;padding:.18rem .55rem;border-radius:4px;text-transform:uppercase;letter-spacing:.06em;font-family:'Syne',sans-serif}
+    .badge-teacher{background:rgba(34,211,238,.12);color:var(--accent2)}
+    .badge-student{background:rgba(74,222,128,.12);color:var(--accent)}
+    .btn{display:inline-block;padding:.45rem 1rem;border-radius:7px;font-size:.85rem;font-weight:600;text-decoration:none;cursor:pointer;border:none;font-family:inherit;transition:opacity .15s,transform .15s}
+    .btn:hover{opacity:.85}
+    .btn-accent{background:var(--accent);color:#0a0e17}
+    .btn-outline{border:1px solid var(--border);color:var(--text);background:transparent}
+    .btn-outline:hover{border-color:var(--muted)}
+    .btn-danger{background:rgba(248,113,113,.15);color:var(--danger);border:1px solid rgba(248,113,113,.2)}
+    .btn-warn{background:rgba(245,158,11,.15);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
+    .btn-lg{padding:.8rem 2rem;font-size:1rem;font-family:'Syne',sans-serif;font-weight:700}
+    .page{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:2.2rem 1.5rem 5rem}
+    .page-sm{max-width:720px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+    .card-h{transition:border-color .2s,transform .2s}
+    .card-h:hover{border-color:rgba(74,222,128,.3);transform:translateY(-2px)}
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem;text-align:center}
+    .stat-num{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800}
+    .stat-lbl{font-size:.75rem;color:var(--muted);margin-top:.2rem}
+    .fg{margin-bottom:1.1rem}
+    .fg label{display:block;font-size:.78rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
+    .fc{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:.72rem 1rem;font-family:inherit;font-size:.9rem;outline:none;transition:border-color .2s}
+    .fc:focus{border-color:var(--accent)}
+    textarea.fc{resize:vertical;min-height:100px;line-height:1.6}
+    h1,h2,h3{font-family:'Syne',sans-serif}
+    .pt{font-size:1.7rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.3rem}
+    .ps{color:var(--muted);font-size:.9rem;margin-bottom:1.8rem}
+    .tbl{width:100%;border-collapse:collapse}
+    .tbl th{font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:.7rem 1rem;border-bottom:1px solid var(--border);text-align:left}
+    .tbl td{padding:.8rem 1rem;border-bottom:1px solid rgba(30,41,59,.6);font-size:.87rem}
+    .tbl tr:last-child td{border-bottom:none}
+    .tbl tr:hover td{background:rgba(255,255,255,.02)}
+    .chip{display:inline-block;font-family:'Syne',sans-serif;font-weight:700;font-size:.72rem;padding:.18rem .55rem;border-radius:5px}
+    .cg{background:rgba(74,222,128,.15);color:#4ade80}
+    .cc{background:rgba(34,211,238,.15);color:#22d3ee}
+    .cy{background:rgba(245,158,11,.15);color:#f59e0b}
+    .cr{background:rgba(248,113,113,.15);color:#f87171}
+    .alert{padding:.85rem 1rem;border-radius:8px;font-size:.88rem;margin-bottom:1rem;display:flex;align-items:center;gap:.6rem}
+    .alert-s{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:#4ade80}
+    .alert-e{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:#f87171}
+    .alert-w{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#f59e0b}
+    .bar-t{height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+    .bar-f{height:100%;border-radius:99px}
+    .shd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+    .shd h2{font-size:1.05rem;font-weight:700}
+    .empty{text-align:center;padding:3rem 1rem;color:var(--muted)}
+    .empty .ei{font-size:2.5rem;margin-bottom:.8rem}
+    {% block extra_style %}{% endblock %}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<nav>
+  <a href="{{ url_for('home') }}" class="logo">Auto<span>Grade</span></a>
+  <div class="nav-r">
+    {% if current_user.is_authenticated %}
+      <span class="nav-u">{{ current_user.full_name() }}</span>
+      <span class="badge-role {% if current_user.is_teacher() %}badge-teacher{% else %}badge-student{% endif %}">
+        {{ current_user.role }}
+      </span>
+      {% if current_user.is_teacher() %}
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline">Dashboard</a>
+      {% else %}
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline">Dashboard</a>
+        <a href="{{ url_for('progress') }}" class="btn btn-outline">Progress</a>
+      {% endif %}
+      <a href="{{ url_for('logout') }}" class="btn btn-outline">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-outline">Login</a>
+      <a href="{{ url_for('register') }}" class="btn btn-accent">Register</a>
+    {% endif %}
+  </div>
+</nav>
+<div class="page {% block page_class %}{% endblock %}">
+  {% with msgs=get_flashed_messages(with_categories=true) %}
+    {% for cat,msg in msgs %}
+      <div class="alert {% if cat=='success' %}alert-s{% elif cat=='error' %}alert-e{% else %}alert-w{% endif %}">
+        {{ msg }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

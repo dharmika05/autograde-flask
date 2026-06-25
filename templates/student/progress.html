@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}My Progress | AutoGrade{% endblock %}
+{% block extra_head %}<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>{% endblock %}
+{% block content %}
+<div class="pt">&#128200; My Progress</div>
+<div class="ps">Track your performance across all exams</div>
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent)">{{ submissions|length }}</div><div class="stat-lbl">Total Exams</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent2)">{{ avg_pct }}%</div><div class="stat-lbl">Average Score</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--warn)">{% if best %}{{ best.percentage }}%{% else %}-{% endif %}</div><div class="stat-lbl">Best Score</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:#c084fc">{% if best %}{{ best.grade }}{% else %}-{% endif %}</div><div class="stat-lbl">Best Grade</div></div>
+</div>
+{% if submissions %}
+<div class="card" style="margin-bottom:2rem">
+  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:1.2rem">&#128202; Score Trend</div>
+  <div style="position:relative;height:260px"><canvas id="pc"></canvas></div>
+</div>
+<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:1.2rem">&#128336; Exam History</div>
+{% for s in submissions | reverse %}
+<div style="display:flex;gap:1.2rem;margin-bottom:1rem;align-items:flex-start">
+  <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.75rem;font-weight:800;flex-shrink:0;margin-top:.1rem;background:{% if s.percentage>=70 %}rgba(74,222,128,.15){% elif s.percentage>=40 %}rgba(245,158,11,.15){% else %}rgba(248,113,113,.15){% endif %};color:{% if s.percentage>=70 %}#4ade80{% elif s.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}">{{ s.grade }}</div>
+  <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;flex-wrap:wrap;gap:.5rem">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">{{ s.exam.title }}</div>
+        <div style="font-size:.78rem;color:var(--muted)"><span class="chip cc" style="font-size:.7rem">{{ s.exam.subject.name }}</span> &nbsp; {{ s.submitted_at.strftime('%d %b %Y') }}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:{% if s.percentage>=70 %}#4ade80{% elif s.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}">{{ s.total_score }}/{{ s.total_marks }}</div>
+        <a href="{{ url_for('view_result', sub_id=s.id) }}" style="font-size:.78rem;color:var(--accent);text-decoration:none">View Report &#8594;</a>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.7rem;margin-top:.6rem">
+      <div class="bar-t" style="flex:1"><div class="bar-f" style="width:{{ s.percentage }}%;background:{% if s.percentage>=70 %}#4ade80{% elif s.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}"></div></div>
+      <span style="font-size:.78rem;font-weight:600;color:var(--muted)">{{ s.percentage }}%</span>
+    </div>
+  </div>
+</div>{% endfor %}
+{% else %}<div class="empty card"><div class="ei">&#128221;</div><p>No exam history yet. <a href="{{ url_for('student_dashboard') }}" style="color:var(--accent)">Take your first exam &#8594;</a></p></div>{% endif %}
+<div style="margin-top:1.5rem"><a href="{{ url_for('student_dashboard') }}" class="btn btn-outline">&#8592; Dashboard</a></div>
+{% endblock %}
+{% block extra_js %}{% if submissions %}
+<script>
+const raw={{ chart_data|safe }};
+const labels=raw.map(d=>d.exam);
+const data=raw.map(d=>d.pct);
+const colors=raw.map(d=>d.pct>=70?'#4ade80':d.pct>=40?'#f59e0b':'#f87171');
+new Chart(document.getElementById('pc'),{type:'bar',data:{labels,datasets:[{label:'Score %',data,backgroundColor:colors.map(c=>c+'33'),borderColor:colors,borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y+'%  |  Grade: '+raw[ctx.dataIndex].grade}}},scales:{y:{min:0,max:100,grid:{color:'rgba(30,41,59,.8)'},ticks:{color:'#64748b',callback:v=>v+'%'}},x:{grid:{display:false},ticks:{color:'#64748b',maxRotation:30}}}}});
+</script>{% endif %}{% endblock %}

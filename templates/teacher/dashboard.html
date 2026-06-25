@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard | AutoGrade{% endblock %}
+{% block page_class %}page-sm{% endblock %}
+{% block content %}
+<div class="pt">&#128105;&#8205;&#127979; Teacher Dashboard</div>
+<div class="ps">Welcome back, {{ current_user.full_name() }}</div>
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent)">{{ questions|length }}</div><div class="stat-lbl">Questions</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent2)">{{ exams|length }}</div><div class="stat-lbl">Exams</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--warn)">{{ total_students }}</div><div class="stat-lbl">Students Attempted</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:#c084fc">{{ subjects|length }}</div><div class="stat-lbl">Subjects</div></div>
+</div>
+<div style="display:flex;gap:.8rem;margin-bottom:2rem;flex-wrap:wrap">
+  <a href="{{ url_for('add_question') }}" class="btn btn-accent">+ Add Question</a>
+  <a href="{{ url_for('create_exam') }}" class="btn btn-outline">&#128203; Create Exam</a>
+</div>
+<div class="shd"><h2>&#128203; Your Exams</h2><a href="{{ url_for('create_exam') }}" class="btn btn-outline" style="font-size:.8rem">+ New Exam</a></div>
+{% if exams %}
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:2rem">
+  <table class="tbl">
+    <thead><tr><th>Exam Title</th><th>Subject</th><th>Questions</th><th>Submissions</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for e in exams %}<tr>
+      <td><strong>{{ e.title }}</strong></td>
+      <td>{{ e.subject.name }}</td>
+      <td>{{ e.questions|length }}</td>
+      <td>{{ e.submissions|length }}</td>
+      <td>{% if e.is_active %}<span class="chip cg">Active</span>{% else %}<span class="chip cr">Inactive</span>{% endif %}</td>
+      <td><a href="{{ url_for('exam_results', exam_id=e.id) }}" class="btn btn-outline" style="font-size:.75rem;padding:.3rem .7rem">Results</a></td>
+    </tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty card" style="margin-bottom:2rem"><div class="ei">&#128203;</div><p>No exams yet. <a href="{{ url_for('create_exam') }}" style="color:var(--accent)">Create your first exam &#8594;</a></p></div>{% endif %}
+
+<div class="shd"><h2>&#10067; Your Questions</h2><a href="{{ url_for('add_question') }}" class="btn btn-outline" style="font-size:.8rem">+ Add</a></div>
+{% if questions %}
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:2rem">
+  <table class="tbl">
+    <thead><tr><th>Question</th><th>Subject</th><th>Marks</th><th>Actions</th></tr></thead>
+    <tbody>{% for q in questions %}<tr>
+      <td style="max-width:380px">{{ q.question_text[:80] }}{% if q.question_text|length > 80 %}...{% endif %}</td>
+      <td><span class="chip cc">{{ q.subject.name }}</span></td>
+      <td>{{ q.max_marks }}</td>
+      <td style="display:flex;gap:.4rem">
+        <a href="{{ url_for('edit_question', qid=q.id) }}" class="btn btn-warn" style="font-size:.75rem;padding:.3rem .7rem">Edit</a>
+        <form method="post" action="{{ url_for('delete_question', qid=q.id) }}" onsubmit="return confirm('Delete?')" style="display:inline">
+          <button type="submit" class="btn btn-danger" style="font-size:.75rem;padding:.3rem .7rem">Del</button>
+        </form>
+      </td>
+    </tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty card" style="margin-bottom:2rem"><div class="ei">&#10067;</div><p>No questions yet. <a href="{{ url_for('add_question') }}" style="color:var(--accent)">Add your first &#8594;</a></p></div>{% endif %}
+
+{% if recent %}
+<div class="shd"><h2>&#128336; Recent Submissions</h2></div>
+<div class="card" style="padding:0;overflow:hidden">
+  <table class="tbl">
+    <thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>Grade</th><th>Date</th><th></th></tr></thead>
+    <tbody>{% for s in recent %}<tr>
+      <td>{{ s.student.full_name() }}</td>
+      <td>{{ s.exam.title }}</td>
+      <td>{{ s.total_score }}/{{ s.total_marks }}</td>
+      <td><span class="chip {% if s.percentage>=70 %}cg{% elif s.percentage>=40 %}cy{% else %}cr{% endif %}">{{ s.grade }} ({{ s.percentage }}%)</span></td>
+      <td style="color:var(--muted);font-size:.8rem">{{ s.submitted_at.strftime('%d %b %Y') }}</td>
+      <td><a href="{{ url_for('student_detail', sub_id=s.id) }}" class="btn btn-outline" style="font-size:.75rem;padding:.3rem .7rem">View</a></td>
+    </tr>{% endfor %}</tbody>
+  </table>
+</div>{% endif %}
+{% endblock %}

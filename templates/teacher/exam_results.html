@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ exam.title }} Results | AutoGrade{% endblock %}
+{% block content %}
+<a href="{{ url_for('teacher_dashboard') }}" style="color:var(--muted);text-decoration:none;font-size:.88rem;display:inline-block;margin-bottom:1rem">&#8592; Dashboard</a>
+<div class="pt">&#128202; {{ exam.title }}</div>
+<div class="ps">{{ exam.subject.name }} &middot; {{ submissions|length }} submissions &middot; Class avg: {{ avg_pct }}%</div>
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent)">{{ submissions|length }}</div><div class="stat-lbl">Submissions</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent2)">{{ avg_pct }}%</div><div class="stat-lbl">Class Average</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--warn)">{{ exam.questions|length }}</div><div class="stat-lbl">Questions</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:#c084fc">{{ exam.total_marks() }}</div><div class="stat-lbl">Total Marks</div></div>
+</div>
+{% if submissions %}
+<div class="card" style="padding:0;overflow:hidden">
+  <table class="tbl">
+    <thead><tr><th>Student</th><th>Score</th><th>%</th><th>Grade</th><th>Submitted</th><th></th></tr></thead>
+    <tbody>{% for s in submissions %}<tr>
+      <td><strong>{{ s.student.full_name() }}</strong><br><span style="color:var(--muted);font-size:.78rem">@{{ s.student.username }}</span></td>
+      <td>{{ s.total_score }}/{{ s.total_marks }}</td>
+      <td><div class="bar-t" style="width:90px;display:inline-block;vertical-align:middle;margin-right:.4rem"><div class="bar-f" style="width:{{ s.percentage }}%;background:{% if s.percentage>=70 %}#4ade80{% elif s.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}"></div></div>{{ s.percentage }}%</td>
+      <td><span class="chip {% if s.percentage>=70 %}cg{% elif s.percentage>=40 %}cy{% else %}cr{% endif %}">{{ s.grade }}</span></td>
+      <td style="color:var(--muted);font-size:.8rem">{{ s.submitted_at.strftime('%d %b %Y') }}</td>
+      <td><a href="{{ url_for('student_detail', sub_id=s.id) }}" class="btn btn-outline" style="font-size:.75rem;padding:.3rem .7rem">View &#8594;</a></td>
+    </tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty card"><div class="ei">&#128525;</div><p>No submissions yet for this exam.</p></div>{% endif %}
+{% endblock %}

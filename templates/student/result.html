@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Result | AutoGrade{% endblock %}
+{% block extra_style %}
+.hero{background:linear-gradient(135deg,var(--card),rgba(22,29,46,.9));border:1px solid var(--border);border-radius:16px;padding:2.8rem 2rem;text-align:center;margin-bottom:1.8rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 0%,rgba(74,222,128,.07) 0%,transparent 70%)}
+.grade-big{font-family:'Syne',sans-serif;font-size:4.5rem;font-weight:800;line-height:1;margin:.8rem 0 .3rem;position:relative}
+.ring-wrap{display:flex;justify-content:center;margin:1.2rem 0;position:relative}
+.ring{position:relative;width:110px;height:110px}
+.ring svg{transform:rotate(-90deg)}
+.ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rc{background:var(--card);border:1px solid var(--border);border-radius:13px;margin-bottom:1.1rem;overflow:hidden}
+.rh{display:flex;align-items:center;gap:.9rem;padding:1rem 1.4rem;cursor:pointer;transition:background .15s;user-select:none}
+.rh:hover{background:rgba(255,255,255,.02)}
+.rb{display:none;padding:0 1.4rem 1.4rem;border-top:1px solid var(--border)}
+.rb.open{display:block}
+.chev{margin-left:auto;color:var(--muted);font-size:.75rem;transition:transform .25s}
+.chev.open{transform:rotate(180deg)}
+{% endblock %}
+{% block content %}
+<a href="{{ url_for('student_dashboard') }}" style="color:var(--muted);text-decoration:none;font-size:.88rem;display:inline-block;margin-bottom:1rem">&#8592; Dashboard</a>
+{% set pct = sub.percentage %}
+{% set gc = '#4ade80' if pct >= 80 else '#22d3ee' if pct >= 60 else '#f59e0b' if pct >= 40 else '#f87171' %}
+<div class="hero">
+  <div style="font-size:.88rem;color:var(--muted);position:relative">{{ sub.student.full_name() }} &mdash; {{ sub.exam.title }}</div>
+  <div class="grade-big" style="color:{{ gc }}">{{ sub.grade }}</div>
+  <div class="ring-wrap"><div class="ring">
+    <svg viewBox="0 0 110 110" width="110" height="110">
+      <circle fill="none" stroke="var(--border)" stroke-width="8" cx="55" cy="55" r="46"/>
+      <circle fill="none" stroke="{{ gc }}" stroke-width="8" stroke-linecap="round" id="rf" cx="55" cy="55" r="46" stroke-dasharray="0 289" data-pct="{{ pct }}"/>
+    </svg>
+    <div class="ring-inner"><div style="font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;color:{{ gc }}">{{ pct }}%</div><div style="font-size:.62rem;color:var(--muted)">score</div></div>
+  </div></div>
+  <div style="font-family:'Syne',sans-serif;font-size:1rem;position:relative"><strong>{{ sub.total_score }}</strong> <span style="color:var(--muted)">/ {{ sub.total_marks }} marks</span></div>
+  <div style="display:flex;justify-content:center;gap:1.2rem;flex-wrap:wrap;margin-top:1.2rem;position:relative">
+    {% for a in sub.answers %}
+    <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.65rem 1.1rem;text-align:center">
+      <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:{% if a.percentage>=70 %}#4ade80{% elif a.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}">{{ a.score }}/{{ a.question.max_marks }}</div>
+      <div style="font-size:.7rem;color:var(--muted)">Q{{ loop.index }}</div>
+    </div>{% endfor %}
+  </div>
+</div>
+<div style="background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.18);border-left:3px solid var(--accent);border-radius:10px;padding:.9rem 1.3rem;margin-bottom:1.8rem;font-size:.9rem;line-height:1.6">
+  {% if pct >= 80 %}&#127881; Outstanding! Excellent understanding demonstrated.
+  {% elif pct >= 60 %}&#128077; Good effort! Review areas where marks were lost.
+  {% elif pct >= 40 %}&#128218; Partial credit. Study the reference answers and focus on core concepts.
+  {% else %}&#128170; Keep going! Review model answers and try again.{% endif %}
+</div>
+<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:1rem">&#128203; Question Breakdown</div>
+{% for a in sub.answers %}
+<div class="rc">
+  <div class="rh" onclick="tog('b{{ loop.index }}','c{{ loop.index }}')">
+    <span class="chip {% if a.percentage>=70 %}cg{% elif a.percentage>=40 %}cy{% else %}cr{% endif %}" style="font-size:.7rem">Q{{ loop.index }}</span>
+    <span style="font-size:.75rem;color:var(--accent2)">{{ a.question.subject.name }}</span>
+    <span style="font-size:.88rem;font-weight:500;flex:1">{{ a.question.question_text[:65] }}{% if a.question.question_text|length > 65 %}...{% endif %}</span>
+    <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin-right:.4rem;color:{% if a.percentage>=70 %}#4ade80{% elif a.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}">{{ a.score }}/{{ a.question.max_marks }}</span>
+    <span class="chip {% if a.percentage>=70 %}cg{% elif a.percentage>=40 %}cy{% else %}cr{% endif %}">{{ a.grade }}</span>
+    <span class="chev" id="c{{ loop.index }}">&#9660;</span>
+  </div>
+  <div class="rb" id="b{{ loop.index }}">
+    <div style="margin-top:1rem">
+      {% for label, val in [('Semantic Similarity', a.semantic_similarity), ('Keyword Coverage', a.keyword_coverage), ('Length Adequacy', a.length_adequacy)] %}
+      <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.55rem">
+        <div style="font-size:.77rem;color:var(--muted);width:160px;flex-shrink:0">{{ label }}</div>
+        <div class="bar-t" style="flex:1"><div class="bar-f" style="width:{{ val }}%;background:{% if val>=70 %}#4ade80{% elif val>=40 %}#f59e0b{% else %}#f87171{% endif %}"></div></div>
+        <div style="font-size:.77rem;font-weight:600;width:38px;text-align:right">{{ val }}%</div>
+      </div>{% endfor %}
+    </div>
+    <div style="margin-top:.8rem;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.14);border-radius:8px;padding:.8rem 1rem;font-size:.84rem;line-height:1.6">&#128161; {{ a.feedback }}</div>
+    <div style="margin-top:1rem"><div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem">Your Answer</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;font-size:.875rem;line-height:1.65">{{ a.student_answer or '(No answer given)' }}</div></div>
+    <div style="margin-top:.8rem"><div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem">Reference Answer</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;font-size:.875rem;line-height:1.65;color:rgba(226,232,240,.6);font-style:italic">{{ a.question.reference_answer }}</div></div>
+  </div>
+</div>{% endfor %}
+<div style="margin-top:1.5rem;display:flex;gap:.8rem;flex-wrap:wrap">
+  <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline btn-lg">&#8592; Dashboard</a>
+  <a href="{{ url_for('progress') }}" class="btn btn-accent btn-lg">View Progress &#8594;</a>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+window.addEventListener('load',()=>{const r=document.getElementById('rf');const p=parseFloat(r.dataset.pct);const c=2*Math.PI*46;setTimeout(()=>{r.style.strokeDasharray=(p/100*c)+' '+c;},200);});
+function tog(b,c){document.getElementById(b).classList.toggle('open');document.getElementById(c).classList.toggle('open');}
+</script>{% endblock %}

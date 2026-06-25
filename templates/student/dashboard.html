@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard | AutoGrade{% endblock %}
+{% block page_class %}page-sm{% endblock %}
+{% block content %}
+<div class="pt">&#127891; Student Dashboard</div>
+<div class="ps">Welcome back, {{ current_user.full_name() }}</div>
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent)">{{ submissions|length }}</div><div class="stat-lbl">Exams Completed</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--accent2)">{{ avg_pct }}%</div><div class="stat-lbl">Average Score</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--warn)">{{ available|length }}</div><div class="stat-lbl">Exams Available</div></div>
+  <div class="stat-card"><a href="{{ url_for('progress') }}" style="text-decoration:none"><div class="stat-num" style="color:#c084fc">&#128200;</div><div class="stat-lbl">View Progress</div></a></div>
+</div>
+<div class="shd"><h2>&#128203; Available Exams</h2><span style="font-size:.8rem;color:var(--muted)">{{ available|length }} pending</span></div>
+{% if available %}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:2.5rem">
+{% for e in available %}
+<div class="card card-h" style="display:flex;flex-direction:column;gap:.6rem">
+  <div style="display:flex;align-items:center;justify-content:space-between"><span class="chip cc">{{ e.subject.name }}</span><span style="font-size:.78rem;color:var(--muted)">{{ e.questions|length }} questions</span></div>
+  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">{{ e.title }}</div>
+  <div style="font-size:.82rem;color:var(--muted)">Total marks: <strong style="color:var(--text)">{{ e.total_marks() }}</strong></div>
+  <a href="{{ url_for('take_exam', exam_id=e.id) }}" class="btn btn-accent" style="margin-top:.4rem;text-align:center">Start Exam &#8594;</a>
+</div>{% endfor %}
+</div>
+{% else %}<div class="empty card" style="margin-bottom:2.5rem"><div class="ei">&#127881;</div><p>You've completed all available exams!</p></div>{% endif %}
+
+<div class="shd"><h2>&#128220; Exam History</h2><a href="{{ url_for('progress') }}" class="btn btn-outline" style="font-size:.8rem">Progress Chart &#8594;</a></div>
+{% if submissions %}
+<div class="card" style="padding:0;overflow:hidden">
+  <table class="tbl">
+    <thead><tr><th>Exam</th><th>Subject</th><th>Score</th><th>Grade</th><th>Date</th><th></th></tr></thead>
+    <tbody>{% for s in submissions %}<tr>
+      <td><strong>{{ s.exam.title }}</strong></td>
+      <td><span class="chip cc">{{ s.exam.subject.name }}</span></td>
+      <td>
+        <span style="font-family:'Syne',sans-serif;font-weight:700">{{ s.total_score }}</span><span style="color:var(--muted)">/{{ s.total_marks }}</span>
+        <div class="bar-t" style="width:80px;margin-top:.3rem"><div class="bar-f" style="width:{{ s.percentage }}%;background:{% if s.percentage>=70 %}#4ade80{% elif s.percentage>=40 %}#f59e0b{% else %}#f87171{% endif %}"></div></div>
+      </td>
+      <td><span class="chip {% if s.percentage>=70 %}cg{% elif s.percentage>=40 %}cy{% else %}cr{% endif %}">{{ s.grade }}</span> <span style="color:var(--muted);font-size:.78rem">{{ s.percentage }}%</span></td>
+      <td style="color:var(--muted);font-size:.82rem">{{ s.submitted_at.strftime('%d %b %Y') }}</td>
+      <td><a href="{{ url_for('view_result', sub_id=s.id) }}" class="btn btn-outline" style="font-size:.75rem;padding:.3rem .75rem">Report</a></td>
+    </tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% else %}<div class="empty card"><div class="ei">&#128221;</div><p>No exams completed yet. Start one above!</p></div>{% endif %}
+{% endblock %}

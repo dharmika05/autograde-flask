@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{% if edit %}Edit{% else %}Add{% endif %} Question | AutoGrade{% endblock %}
+{% block page_class %}page-sm{% endblock %}
+{% block content %}
+<div class="pt">{% if edit %}&#9998; Edit Question{% else %}&#10133; Add New Question{% endif %}</div>
+<div class="ps">{% if edit %}Update question details{% else %}Add a question with a reference answer for ML grading{% endif %}</div>
+<div class="card">
+  <form method="post">
+    <div class="fg"><label>Subject</label>
+      <input type="text" name="subject_name" class="fc" list="slist" required
+        value="{% if edit %}{{ question.subject.name }}{% elif form.subject_name is defined %}{{ form.subject_name }}{% endif %}"
+        placeholder="e.g. Computer Science, Mathematics, Physics...">
+      <datalist id="slist">{% for s in subjects %}<option value="{{ s.name }}">{% endfor %}</datalist>
+    </div>
+    <div class="fg"><label>Question Text</label>
+      <textarea name="question_text" class="fc" rows="3" required placeholder="Write the question here...">{% if edit %}{{ question.question_text }}{% endif %}</textarea>
+    </div>
+    <div class="fg"><label>Reference / Model Answer</label>
+      <small style="color:var(--muted);display:block;margin-bottom:.5rem;font-size:.78rem">Write the ideal answer. The ML engine uses this to grade student responses.</small>
+      <textarea name="reference_answer" class="fc" rows="6" required placeholder="Write the complete model answer...">{% if edit %}{{ question.reference_answer }}{% endif %}</textarea>
+    </div>
+    <div class="fg" style="max-width:160px"><label>Maximum Marks</label>
+      <input type="number" name="max_marks" class="fc" value="{% if edit %}{{ question.max_marks }}{% else %}10{% endif %}" min="1" max="100" required>
+    </div>
+    <div style="display:flex;gap:.8rem;margin-top:1.5rem">
+      <button type="submit" class="btn btn-accent btn-lg">{% if edit %}Save Changes{% else %}Add Question{% endif %} &#8594;</button>
+      <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline btn-lg">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

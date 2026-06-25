@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ exam.title }} | AutoGrade{% endblock %}
+{% block extra_style %}
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;margin-bottom:1.5rem;transition:border-color .2s}
+.q-card:focus-within{border-color:rgba(74,222,128,.35)}
+.q-text{font-size:.98rem;font-weight:500;line-height:1.6;margin-bottom:1.2rem}
+.ls{display:none;align-items:center;gap:.7rem;margin-bottom:.6rem;font-size:.78rem}
+.ls.show{display:flex}
+.ls-bar{flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden}
+.ls-fill{height:100%;border-radius:99px;transition:width .5s}
+.q-ta{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:1rem 1.1rem;font-family:inherit;font-size:.9rem;line-height:1.7;resize:vertical;min-height:130px;outline:none;transition:border-color .2s}
+.q-ta:focus{border-color:rgba(74,222,128,.4)}
+.prog-wrap{margin-bottom:2rem}
+.prog-lbl{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:.45rem}
+.prog-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.sub-bar{position:sticky;bottom:0;z-index:50;background:rgba(10,14,23,.92);backdrop-filter:blur(14px);border-top:1px solid var(--border);padding:.9rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.exam-hdr{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem 1.8rem;margin-bottom:1.8rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.timer{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;display:flex;align-items:center;gap:.5rem}
+.td{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.timer.warn{color:var(--warn)}.timer.warn .td{background:var(--warn)}
+{% endblock %}
+{% block content %}
+<div class="exam-hdr">
+  <div><h1 style="font-size:1.3rem;font-weight:800">&#128221; {{ exam.title }}</h1>
+  <p style="color:var(--muted);font-size:.85rem;margin-top:.2rem">{{ exam.subject.name }} &middot; {{ exam.questions|length }} questions &middot; {{ exam.total_marks() }} marks</p></div>
+  <div class="timer" id="tmr"><div class="td"></div><span id="tt">45:00</span></div>
+</div>
+<div class="prog-wrap">
+  <div class="prog-lbl"><span>Progress</span><span id="pl">0 / {{ exam.questions|length }} answered</span></div>
+  <div class="prog-track"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+</div>
+<form id="ef" method="post" action="{{ url_for('submit_exam', exam_id=exam.id) }}">
+  {% for q in exam.questions %}
+  <div class="q-card">
+    <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.9rem">
+      <span class="chip cg" style="font-size:.8rem">Q{{ loop.index }}</span>
+      <span class="chip cc" style="font-size:.75rem">{{ q.subject.name }}</span>
+      <span style="margin-left:auto;font-size:.8rem;color:var(--muted)">{{ q.max_marks }} marks</span>
+    </div>
+    <div class="q-text">{{ q.question_text }}</div>
+    <div class="ls" id="live_{{ q.id }}">
+      <span style="color:var(--muted)">Live:</span>
+      <div class="ls-bar"><div class="ls-fill" id="lf_{{ q.id }}" style="width:0%"></div></div>
+      <span id="lg_{{ q.id }}" style="font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem">-</span>
+    </div>
+    <textarea class="q-ta" name="answer_{{ q.id }}" id="a_{{ q.id }}" data-qid="{{ q.id }}" placeholder="Write your answer here..."></textarea>
+    <div style="text-align:right;font-size:.74rem;color:var(--muted);margin-top:.35rem" id="cc_{{ q.id }}">0 characters</div>
+  </div>
+  {% endfor %}
+</form>
+{% endblock %}
+{% block extra_js %}
+<div class="sub-bar">
+  <div style="font-size:.85rem;color:var(--muted)"><strong id="ac">0</strong> of <strong>{{ exam.questions|length }}</strong> answered</div>
+  <button class="btn btn-accent btn-lg" id="sb" onclick="doSubmit()">Submit Exam &#8594;</button>
+</div>
+<script>
+const TOTAL={{ exam.questions|length }};
+let secs=45*60;
+const tt=document.getElementById('tt'),tmr=document.getElementById('tmr');
+const tid=setInterval(()=>{secs--;const m=String(Math.floor(secs/60)).padStart(2,'0'),s=String(secs%60).padStart(2,'0');tt.textContent=m+':'+s;if(secs<=300)tmr.classList.add('warn');if(secs<=0){clearInterval(tid);doSubmit();}},1000);
+function upd(){let n=0;document.querySelectorAll('textarea').forEach(t=>{if(t.value.trim())n++;});document.getElementById('pf').style.width=(n/TOTAL*100)+'%';document.getElementById('pl').textContent=n+' / '+TOTAL+' answered';document.getElementById('ac').textContent=n;}
+document.querySelectorAll('textarea').forEach(ta=>{ta.addEventListener('input',function(){document.getElementById('cc_'+this.dataset.qid).textContent=this.value.length+' characters';upd();sched(this.dataset.qid,this.value);});});
+const db={};
+function sched(q,t){clearTimeout(db[q]);if(t.trim().length<20){document.getElementById('live_'+q).classList.remove('show');return;}db[q]=setTimeout(()=>fetchG(q,t),700);}
+async function fetchG(q,t){try{const r=await fetch('/api/live-grade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question_id:parseInt(q),answer:t})});const d=await r.json();const c=d.percentage>=70?'#4ade80':d.percentage>=40?'#f59e0b':'#f87171';document.getElementById('lf_'+q).style.width=d.percentage+'%';document.getElementById('lf_'+q).style.background=c;const el=document.getElementById('lg_'+q);el.textContent=d.grade+' ('+d.percentage+'%)';el.style.color=c;document.getElementById('live_'+q).classList.add('show');}catch(e){}}
+function doSubmit(){const b=document.getElementById('sb');b.disabled=true;b.textContent='Grading...';document.getElementById('ef').submit();}
+</script>
+{% endblock %}
